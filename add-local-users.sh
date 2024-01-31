@@ -11,17 +11,21 @@ then
   exit 1 
 fi
 
-# Prompt the user to provide a username
-read -p "Enter the username to create: " USERNAME
+# Check if there is atleast one argument provided in the input. If not, tell user about usage
+if [[ "${#}" -eq 0 ]]
+then
+  echo "Usage: #{0} USERNAME [USERNAME]..."
+  echo "Create an account on the local system with the name of USER_NAME and NAME field for COMMENT"
+  exit 1
+fi
+# Extract the username and name
+USERNAME=${1}
+NAME=${2}
 
-# Prompt the user to enter the name of the user or the application who will be using this account
-read -p "Enter the name of the person or the application using this account: " NAME
-
-# Prompt the user to enter a Password
-read -p "Enter the password to use for the account: " PASSWORD
-
+# Add the user of specified name and username
 useradd -c "${NAME}" -m ${USERNAME}
 
+# Check if the user was created successfully
 if [[ "${?}" -eq 0 ]]
 then
  echo 'User account creation successful!'
@@ -30,6 +34,14 @@ else
  exit 1
 fi
 
+# Generate the special character to be attached to the generated number
+ALPHANUMERIC='~!@#$%^&*()_+-=`'
+SPECIAL_CHAR=$(echo ${ALPHANUMERIC} | fold -w1 | shuf)
+
+# Generate the password
+PASSWORD=$(date +%s%N | sha256sum | head -c27 )${RANDOM}${SPECIAL_CHAR}
+
+# Assign the generated password
 echo ${PASSWORD} | passwd --stdin ${USERNAME}
 
 if [[ "${?}" -eq 0 ]]
@@ -40,7 +52,9 @@ else
  exit 1
 fi
 
+# Force the user to change the password after first login
 passwd -e ${USERNAME}
+
 echo
 echo "Username: ${USERNAME}"
 echo
